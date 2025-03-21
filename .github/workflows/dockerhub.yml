@@ -21,3 +21,6 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }} # Docker Hub token for authentication
+    with:
+      tag_name_suffix: humble
+      remove_suffix: true
