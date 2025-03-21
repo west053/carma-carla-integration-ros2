@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 ARG DOCKER_ORG="usdotfhwastolcandidate"
-ARG DOCKER_TAG="timtsp-humble"
+ARG DOCKER_TAG="timtsp-noetic"
 FROM ${DOCKER_ORG}/carma-base:${DOCKER_TAG} 
 ARG GIT_BRANCH="release/timtsp" 
 ENV CARMA_VERSION=${GIT_BRANCH}
