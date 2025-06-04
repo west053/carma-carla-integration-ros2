@@ -1,40 +1,16 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(carla_ros_bridge)
+cmake_minimum_required(VERSION 3.8)
+project(carla_ros2_bridge_cdasim) # Or whatever you named your package in package.xml
 
-find_package(ros_environment REQUIRED)
-set(ROS_VERSION $ENV{ROS_VERSION})
+# Find dependencies.
+# For a pure Python package, ament_cmake is the main one.
+find_package(ament_cmake REQUIRED)
+# For ROS 2 Humble and newer, find Python 3 directly:
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
-if(${ROS_VERSION} EQUAL 1)
+# This macro handles the installation of Python packages
+# based on setup.py and the ament_python build type in package.xml.
+ament_python_install_package()
 
-  find_package(catkin REQUIRED COMPONENTS rospy sensor_msgs geometry_msgs
-                                          derived_object_msgs tf roslaunch)
-
-  catkin_python_setup()
-
-  catkin_package()
-
-  if(CATKIN_ENABLE_TESTING)
-    roslaunch_add_file_check(launch)
-    roslaunch_add_file_check(test)
-  endif()
-
-  include_directories(${catkin_INCLUDE_DIRS})
-
-  install(PROGRAMS src/carla_ros_bridge/bridge.py
-          DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-  install(FILES src/carla_ros_bridge/CARLA_VERSION
-          DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-  install(FILES test/ros_bridge_client.test
-          DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
-  install(DIRECTORY launch/
-          DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
-
-  if(CATKIN_ENABLE_TESTING AND NOT $ENV{CI})
-    find_package(rostest REQUIRED)
-    add_rostest(test/ros_bridge_client.test)
-  endif()
-
-endif()
+# This allows the package to be found by other ROS 2 packages
+# and registers tests if you have them.
+ament_package()
