@@ -6,10 +6,12 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 #
 """
-handle a odom sensor
+Handles posting odometry, comparable to odom_sensor.py from ROS1 bridge
 """
 
-from carla_ros_bridge.pseudo_actor import PseudoActor
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile
 
 from nav_msgs.msg import Odometry
 
