@@ -29,7 +29,7 @@ setup(
     
     entry_points={
         'console_scripts': [
-            'bridge = carla_ros_bridge.carla_bridge_node:main',
+            'bridge = carla_ros2_bridge.bridge:main',
         ],
     },
 )

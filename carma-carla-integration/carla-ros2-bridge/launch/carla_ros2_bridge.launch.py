@@ -1,8 +1,10 @@
 import launch
 import launch_ros.actions
 
-
 def generate_launch_description():
+    """
+    Launches the CARLA ROS 2 Bridge Node and declares launch arguments.
+    """
     ld = launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument(
             name='host',
@@ -22,17 +24,17 @@ def generate_launch_description():
         launch.actions.DeclareLaunchArgument(
             name='passive',
             default_value='False',
-            description='When enabled, the ROS bridge will take a backseat and another client must tick the world (only in synchronous mode)'
+            description='When enabled, another client must tick the world'
         ),
         launch.actions.DeclareLaunchArgument(
             name='synchronous_mode',
             default_value='True',
-            description='Enable/disable synchronous mode. If enabled, the ROS bridge waits until the expected data is received for all sensors'
+            description='Enable/disable synchronous mode'
         ),
         launch.actions.DeclareLaunchArgument(
             name='synchronous_mode_wait_for_vehicle_control_command',
             default_value='False',
-            description='When enabled, pauses the tick until a vehicle control is completed (only in synchronous mode)'
+            description='Pause the tick until a vehicle control is completed'
         ),
         launch.actions.DeclareLaunchArgument(
             name='fixed_delta_seconds',
@@ -42,25 +44,27 @@ def generate_launch_description():
         launch.actions.DeclareLaunchArgument(
             name='town',
             default_value='Town01',
-            description='Either use an available CARLA town (eg. "Town01") or an OpenDRIVE file (ending in .xodr)'
+            description='CARLA town or path to .xodr file'
         ),
         launch.actions.DeclareLaunchArgument(
             name='register_all_sensors',
             default_value='True',
-            description='Enable/disable the registration of all sensors. If disabled, only sensors spawned by the bridge are registered'
+            description='Enable/disable registration of all sensors'
         ),
+        # ROS 2 Change: Default value is now a single string, not a list.
         launch.actions.DeclareLaunchArgument(
             name='ego_vehicle_role_name',
-            default_value=["hero", "ego_vehicle", "hero0", "hero1", "hero2",
-                           "hero3", "hero4", "hero5", "hero6", "hero7", "hero8", "hero9"],
-            description='Role names to identify ego vehicles. '
+            default_value='hero',
+            description='Role name to identify the ego vehicle'
         ),
+        # This is the main bridge node
         launch_ros.actions.Node(
-            package='carla_ros_bridge',
+            # ROS 2 Change: The package name now correctly points to your package.
+            package='carla_ros2_bridge',
             executable='bridge',
             name='carla_ros_bridge',
             output='screen',
-            emulate_tty='True',
+            emulate_tty=True,
             on_exit=launch.actions.Shutdown(),
             parameters=[
                 {
@@ -100,7 +104,6 @@ def generate_launch_description():
         )
     ])
     return ld
-
 
 if __name__ == '__main__':
     generate_launch_description()
