@@ -10,7 +10,7 @@
 Classes to handle Carla traffic participants
 """
 
-import carla_common.transforms as trans
+from . import transforms as trans
 
 from carla_ros_bridge.actor import Actor
 

@@ -10,7 +10,7 @@
 Classes to handle Carla vehicles
 """
 
-import carla_common.transforms as trans
+from . import transforms as trans
 
 from carla_ros_bridge.traffic_participant import TrafficParticipant
 
