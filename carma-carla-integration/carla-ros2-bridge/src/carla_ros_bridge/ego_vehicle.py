@@ -15,7 +15,7 @@ import os
 import numpy
 from carla import VehicleControl
 
-from ros_compatibility.qos import QoSProfile, DurabilityPolicy
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 from carla_ros_bridge.vehicle import Vehicle
 
