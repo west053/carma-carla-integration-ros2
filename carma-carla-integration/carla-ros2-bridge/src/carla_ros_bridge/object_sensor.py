@@ -6,79 +6,69 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 #
 """
-handle a object sensor
+Handles publishing of detected objects in the world (Ported to ROS 2)
 """
+from rclpy.node import Node
+from rclpy.qos import QoSProfile
 
-from carla_ros_bridge.pseudo_actor import PseudoActor
-from carla_ros_bridge.vehicle import Vehicle
-from carla_ros_bridge.walker import Walker
+from .vehicle import Vehicle
+from .walker import Walker
 
 from derived_object_msgs.msg import ObjectArray
 
 
-class ObjectSensor(PseudoActor):
-
+class ObjectSensor(object):
     """
-    Pseudo object sensor
+    Pseudo object sensor, responsible for publishing an ObjectArray of detected actors.
     """
 
-    def __init__(self, uid, name, parent, node, actor_list):
+    def __init__(self, parent_actor, node: Node, actor_list):
         """
         Constructor
 
-        :param uid: unique identifier for this object
-        :type uid: int
-        :param name: name identiying this object
-        :type name: string
-        :param parent: the parent of this
-        :type parent: carla_ros_bridge.Parent
-        :param node: node-handle
-        :type node: CompatibleNode
-        :param actor_list: current list of actors
-        :type actor_list: map(carla-actor-id -> python-actor-object)
+        :param parent_actor: The parent actor (ego vehicle) that this sensor is attached to.
+        :param node: The main ROS 2 node handle.
+        :param actor_list: The dictionary of all current actors managed by the bridge.
         """
-
-        super(ObjectSensor, self).__init__(uid=uid,
-                                           name=name,
-                                           parent=parent,
-                                           node=node)
+        self.parent = parent_actor
+        self.node = node
         self.actor_list = actor_list
-        self.object_publisher = node.new_publisher(ObjectArray,
-                                                   self.get_topic_prefix(),
-                                                   qos_profile=10)
+
+        # Uses node.create_publisher and a clear topic name for ROS 2
+        self.object_publisher = self.node.create_publisher(
+            ObjectArray,
+            f"{self.parent.get_topic_prefix()}/objects", # e.g., /carla/hero/objects
+            QoSProfile(depth=10))
 
     def destroy(self):
         """
         Function to destroy this object.
-        :return:
         """
-        super(ObjectSensor, self).destroy()
         self.actor_list = None
         self.node.destroy_publisher(self.object_publisher)
 
-    @staticmethod
-    def get_blueprint_name():
+    def update(self):
         """
-        Get the blueprint identifier for the pseudo sensor
-        :return: name
+        Function to update this object.
+        On update, it iterates through all actors, creates an ObjectArray, and publishes it.
         """
-        return "sensor.pseudo.objects"
+        # Gets timestamp from the node's clock now
+        timestamp = self.node.get_clock().now().to_msg()
 
-    def update(self, frame, timestamp):
-        """
-        Function (override) to update this object.
-        On update map sends:
-        - tf global frame
-        :return:
-        """
         ros_objects = ObjectArray()
-        ros_objects.header = self.get_msg_header(frame_id="map", timestamp=timestamp)
+        # The header is created using the parent's (ego vehicle's) methods
+        ros_objects.header = self.parent.get_msg_header(frame_id="map", timestamp=timestamp)
+        
         for actor_id in self.actor_list.keys():
-            # currently only Vehicles and Walkers are added to the object array
+            # Exclude the ego vehicle itself from the list of detected objects
             if self.parent is None or self.parent.uid != actor_id:
                 actor = self.actor_list[actor_id]
+                
+                # The core logic here works because our Vehicle and Walker classes
+                # inherit from TrafficParticipant, which has get_object_info().
                 if isinstance(actor, Vehicle):
                     ros_objects.objects.append(actor.get_object_info())
                 elif isinstance(actor, Walker):
                     ros_objects.objects.append(actor.get_object_info())
+        
         self.object_publisher.publish(ros_objects)
