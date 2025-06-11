@@ -36,23 +36,30 @@ class OdometrySensor(object):
             Odometry,
             f"{self.parent.get_topic_prefix()}/odometry", # Topic name
             QoSProfile(depth=10) # Standard QoS profile
-    )
+            )
 
     def destroy(self):
         self.node.destroy_publisher(self.odometry_publisher)
 
-    def update(self, frame, timestamp):
+    def update(self):
         """
         Function (override) to update this object.
+        This will be called periodically by the main bridge node.
         """
+        # Get current timestamp from the node's clock
+        timestamp = self.node.get_clock().now().to_msg()
+
         odometry = Odometry(header=self.parent.get_msg_header("map", timestamp=timestamp))
         odometry.child_frame_id = self.parent.get_prefix()
         try:
+            # This part of the logic remains the same. The methods it calls
+            # on 'self.parent' will be ported in parent class ################ MAKE SURE THAT THIS IS PORTED ######################
             odometry.pose.pose = self.parent.get_current_ros_pose()
             odometry.twist.twist = self.parent.get_current_ros_twist_rotated()
         except AttributeError:
-            # parent actor disappeared, do not send tf
-            self.node.logwarn(
-                "OdometrySensor could not publish. parent actor {} not found".format(self.parent.uid))
+            # ROS 2 logger for warnings
+            self.node.get_logger().warn(
+                f"OdometrySensor could not publish. parent actor {self.parent.uid} not found"
+            )
             return
         self.odometry_publisher.publish(odometry)
