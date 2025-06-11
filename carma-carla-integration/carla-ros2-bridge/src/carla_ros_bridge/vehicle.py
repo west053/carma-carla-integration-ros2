@@ -12,7 +12,7 @@ Classes to handle Carla vehicles
 
 from . import transforms as trans
 
-from carla_ros_bridge.traffic_participant import TrafficParticipant
+from .traffic_participant import TrafficParticipant
 
 from derived_object_msgs.msg import Object
 from std_msgs.msg import ColorRGBA
@@ -57,7 +57,8 @@ class Vehicle(TrafficParticipant):
                                       parent=parent,
                                       node=node,
                                       carla_actor=carla_actor)
-
+    '''
+    Commented out for now
     def get_marker_color(self):  # pylint: disable=no-self-use
         """
         Function (override) to return the color for marker messages.
@@ -83,6 +84,7 @@ class Vehicle(TrafficParticipant):
         marker_transform = self.carla_actor.get_transform()
         marker_transform.location += marker_transform.get_up_vector() * extent.z
         return trans.carla_transform_to_ros_pose(marker_transform)
+    '''
 
     def get_classification(self):
         """
