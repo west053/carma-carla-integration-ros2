@@ -16,7 +16,7 @@ from rclpy.qos import QoSProfile
 from nav_msgs.msg import Odometry
 
 
-class OdometrySensor(PseudoActor):
+class OdometrySensor(object): 
 
     """
     Pseudo odometry sensor
