@@ -42,14 +42,6 @@ class OdometrySensor(object):
         super(OdometrySensor, self).destroy()
         self.node.destroy_publisher(self.odometry_publisher)
 
-    @staticmethod
-    def get_blueprint_name():
-        """
-        Get the blueprint identifier for the pseudo sensor
-        :return: name
-        """
-        return "sensor.pseudo.odom"
-
     def update(self, frame, timestamp):
         """
         Function (override) to update this object.
