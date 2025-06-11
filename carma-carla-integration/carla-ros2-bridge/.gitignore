@@ -18,3 +18,8 @@
 # Directories that might appear on external disks
 .Metadata_Never_Index
 .apdisk
+
+#colcon
+/build
+/install
+/log
