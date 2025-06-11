@@ -37,7 +37,7 @@ class EgoVehicle(Vehicle):
 
     def __init__(self, uid, name, parent, node, carla_actor, vehicle_control_applied_callback):
         """
-        Constructor
+        Constructor for Ros2
 
         :param uid: unique identifier for this object
         :type uid: int
@@ -45,54 +45,59 @@ class EgoVehicle(Vehicle):
         :type name: string
         :param parent: the parent of this
         :type parent: carla_ros_bridge.Parent
-        :param node: node-handle
-        :type node: CompatibleNode
+        :param node: node-handle (now an rclpy.node.Node)
+        :type node: rclpy.node.Node
         :param carla_actor: carla actor object
         :type carla_actor: carla.Actor
         """
+        # super() call remains, as we will also port the parent 'Vehicle' class
         super(EgoVehicle, self).__init__(uid=uid,
                                          name=name,
                                          parent=parent,
                                          node=node,
                                          carla_actor=carla_actor)
-
         self.vehicle_info_published = False
         self.vehicle_control_override = False
         self._vehicle_control_applied_callback = vehicle_control_applied_callback
 
-        self.vehicle_status_publisher = node.new_publisher(
+        # Updated to use node.create_publisher for ROS2 design
+        self.vehicle_status_publisher = node.create_publisher(
             CarlaEgoVehicleStatus,
             self.get_topic_prefix() + "/vehicle_status",
             qos_profile=10)
-        self.vehicle_info_publisher = node.new_publisher(
+
+        # Uses node.create_publisher and a QoS profile for "latched" behavior
+        self.vehicle_info_publisher = node.create_publisher(
             CarlaEgoVehicleInfo,
-            self.get_topic_prefix() +
-            "/vehicle_info",
-            qos_profile=QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL))
-
-        self.control_subscriber = node.new_subscription(
-            CarlaEgoVehicleControl,
-            self.get_topic_prefix() + "/vehicle_control_cmd",
-            lambda data: self.control_command_updated(data, manual_override=False),
-            qos_profile=10)
-
-        self.manual_control_subscriber = node.new_subscription(
-            CarlaEgoVehicleControl,
-            self.get_topic_prefix() + "/vehicle_control_cmd_manual",
-            lambda data: self.control_command_updated(data, manual_override=True),
-            qos_profile=10)
-
-        self.control_override_subscriber = node.new_subscription(
-            Bool,
-            self.get_topic_prefix() + "/vehicle_control_manual_override",
-            self.control_command_override,
+            self.get_topic_prefix() + "/vehicle_info",
             qos_profile=QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
 
-        self.enable_autopilot_subscriber = node.new_subscription(
-            Bool,
-            self.get_topic_prefix() + "/enable_autopilot",
-            self.enable_autopilot_updated,
-            qos_profile=10)
+        # --- PORTING DEBUG Comment out control subscribers to focus on publishing logic first ---
+        # The creation of subscribers will be ported in a later step i think
+        #
+        # self.control_subscriber = node.create_subscription(
+        #     CarlaEgoVehicleControl,
+        #     self.get_topic_prefix() + "/vehicle_control_cmd",
+        #     lambda data: self.control_command_updated(data, manual_override=False),
+        #     qos_profile=10)
+        #
+        # self.manual_control_subscriber = node.create_subscription(
+        #     CarlaEgoVehicleControl,
+        #     self.get_topic_prefix() + "/vehicle_control_cmd_manual",
+        #     lambda data: self.control_command_updated(data, manual_override=True),
+        #     qos_profile=10)
+        #
+        # self.control_override_subscriber = node.create_subscription(
+        #     Bool,
+        #     self.get_topic_prefix() + "/vehicle_control_manual_override",
+        #     self.control_command_override,
+        #     qos_profile=QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+        #
+        # self.enable_autopilot_subscriber = node.create_subscription(
+        #     Bool,
+        #     self.get_topic_prefix() + "/enable_autopilot",
+        #     self.enable_autopilot_updated,
+        #     qos_profile=10)
 
     def get_marker_color(self):
         """
@@ -109,7 +114,7 @@ class EgoVehicle(Vehicle):
         color.b = 0.0
         return color
 
-    def send_vehicle_msgs(self, frame, timestamp):
+    def send_vehicle_msgs(self, timestamp):
         """
         send messages related to vehicle status
 
@@ -177,7 +182,7 @@ class EgoVehicle(Vehicle):
 
             self.vehicle_info_publisher.publish(vehicle_info)
 
-    def update(self, frame, timestamp):
+    def update(self, timestamp):
         """
         Function (override) to update this object.
 
@@ -185,27 +190,34 @@ class EgoVehicle(Vehicle):
 
         :return:
         """
-        self.send_vehicle_msgs(frame, timestamp)
-        super(EgoVehicle, self).update(frame, timestamp)
+        self.send_vehicle_msgs(timestamp)
+        super(EgoVehicle, self).update(timestamp)
 
     def destroy(self):
         """
         Function (override) to destroy this object.
 
-        Terminate ROS subscriptions
+        Terminate ROS publishers and subscriptions.
         Finally forward call to super class.
-
-        :return:
         """
-        self.node.logdebug("Destroy Vehicle(id={})".format(self.get_id()))
-        self.node.destroy_subscription(self.control_subscriber)
-        self.node.destroy_subscription(self.enable_autopilot_subscriber)
-        self.node.destroy_subscription(self.control_override_subscriber)
-        self.node.destroy_subscription(self.manual_control_subscriber)
+        # Use the node's logger
+        self.node.get_logger().debug(f"Destroying EgoVehicle(id={self.get_id()})")
+
+        # --- Temporarily disable destroying control subscribers as they are not created in __init__ ---
+        # self.node.destroy_subscription(self.control_subscriber)
+        # self.node.destroy_subscription(self.enable_autopilot_subscriber)
+        # self.node.destroy_subscription(self.control_override_subscriber)
+        # self.node.destroy_subscription(self.manual_control_subscriber)
+
+        # Destroy the publishers created in __init__
         self.node.destroy_publisher(self.vehicle_status_publisher)
         self.node.destroy_publisher(self.vehicle_info_publisher)
+        
+        # Forward call
         Vehicle.destroy(self)
 
+    '''
+    ROS2 Debug. Commenting these out as well
     def control_command_override(self, enable):
         """
         Set the vehicle control mode according to ros topic
@@ -239,7 +251,7 @@ class EgoVehicle(Vehicle):
             self.carla_actor.apply_control(vehicle_control)
             self._vehicle_control_applied_callback(self.get_id())
 
-    def enable_autopilot_updated(self, enable_auto_pilot):
+     def enable_autopilot_updated(self, enable_auto_pilot):
         """
         Enable/disable auto pilot
 
@@ -249,6 +261,8 @@ class EgoVehicle(Vehicle):
         """
         self.node.logdebug("Ego vehicle: Set autopilot to {}".format(enable_auto_pilot.data))
         self.carla_actor.set_autopilot(enable_auto_pilot.data)
+    '''
+
 
     @staticmethod
     def get_vector_length_squared(carla_vector):
