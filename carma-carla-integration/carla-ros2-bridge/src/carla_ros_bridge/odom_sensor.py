@@ -22,30 +22,21 @@ class OdometrySensor(object):
     Pseudo odometry sensor
     """
 
-    def __init__(self, uid, name, parent, node):
+    def __init__(self, parent_actor, node: Node):
         """
         Constructor
-
-        :param uid: unique identifier for this object
-        :type uid: int
-        :param name: name identiying this object
-        :type name: string
-        :param carla_world: carla world object
-        :type carla_world: carla.World
-        :param parent: the parent of this
-        :type parent: carla_ros_bridge.Parent
-        :param node: node-handle
-        :type node: carla_ros_bridge.CarlaRosBridge
+        :param parent_actor: The parent actor (ex. an EgoVehicle object) that provides the data.
+        :param node: The main ROS 2 node that this publisher will use to interact with ROS.
         """
+        self.parent = parent_actor
+        self.node = node
 
-        super(OdometrySensor, self).__init__(uid=uid,
-                                             name=name,
-                                             parent=parent,
-                                             node=node)
-
-        self.odometry_publisher = node.new_publisher(Odometry,
-                                                     self.get_topic_prefix(),
-                                                     qos_profile=10)
+        # Directly creates a ROS 2 publisher using the node handle
+        self.odometry_publisher = self.node.create_publisher(
+            Odometry,
+            f"{self.parent.get_topic_prefix()}/odometry", # Topic name
+            QoSProfile(depth=10) # Standard QoS profile
+    )
 
     def destroy(self):
         super(OdometrySensor, self).destroy()
