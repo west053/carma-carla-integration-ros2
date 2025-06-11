@@ -39,7 +39,6 @@ class OdometrySensor(object):
     )
 
     def destroy(self):
-        super(OdometrySensor, self).destroy()
         self.node.destroy_publisher(self.odometry_publisher)
 
     def update(self, frame, timestamp):
